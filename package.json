@@ -1,0 +1,41 @@
+{
+  "name": "btm-api",
+  "version": "1.0.0",
+  "description": "API provedora dos rescursos da aplicação BTM",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --exec \" babel-node index.js\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mayconrebordao/btm-api.git"
+  },
+  "keywords": [
+    "node",
+    "js",
+    "nodejs",
+    "express",
+    "jwt",
+    "mongo",
+    "mongoose",
+    "api"
+  ],
+  "author": "Maycon de Arruda Rebordão <r.maycon1122@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mayconrebordao/btm-api/issues"
+  },
+  "homepage": "https://github.com/mayconrebordao/btm-api#readme",
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.18.2",
+    "express": "^4.16.3",
+    "jsonwebtoken": "^8.2.1",
+    "mongoose": "^5.0.14"
+  },
+  "devDependencies": {
+    "chalk": "^2.4.0"
+  }
+}
