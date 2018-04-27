@@ -18,10 +18,11 @@ Rotas disponíveis atualmente:
 
 *   groups rotas:
 
-    *   get /:userId \* ver dados de um grupo atraves de seu id
-        *   post /
-            *   criar um grupo,
-        *   update /:userId
-            *   atualiza dados de um grupo atraves de seu id
-        *   delete /:userId
-            *   delete um grupo atraves de seu id
+    *   get /:userId
+        *   ver dados de um grupo atraves de seu id
+    *   post /
+        *   criar um grupo,
+    *   update /:userId
+        *   atualiza dados de um grupo atraves de seu id
+    *   delete /:userId
+        *   delete um grupo atraves de seu id
