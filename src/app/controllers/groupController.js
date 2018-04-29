@@ -1,5 +1,54 @@
 const Group = require("../models/Group");
 
+exports.getAll = async (req, res, next) => {
+    try {
+        Group.find(async (error, groups) => {
+            // é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 .
+            if (error) {
+                return res.status(404).send({ error: "Group Not found." });
+            }
+            let response = groups.map(group => {
+                group.tasks = group.tasks || [];
+                return {
+                    id: group._id,
+                    name: group.name,
+                    description: group.description,
+                    tasks: group.tasks.map(task => {
+                        return {
+                            id: task._id
+                        };
+                    })
+                };
+            });
+            if (response.length === 0) {
+                return res.status(202).send({
+                    message: "No groups found."
+                });
+            } else {
+                return res.send(response);
+            }
+            // verificando se o valor de tasks é unfined, caso seja ele recebe um vetor vazio
+            // group.tasks = group.tasks || [];
+            // // retornando dados do grupo
+            // return res.status(200).send({
+            //     id: group._id,
+            //     name: group.name,
+            //     description: group.description,
+            //     tasks: group.tasks.map(task => {
+            //         return {
+            //             id: task._id
+            //         };
+            //     })
+            // });
+        });
+    } catch (error) {
+        // informa o usuário da api que houve um error interno no servidor
+        return res.status(500).send({
+            error: "Internal  error, plaese try again."
+        });
+    }
+};
+
 exports.getById = async (req, res, next) => {
     try {
         Group.findById(req.params.groupId, async (error, group) => {
@@ -34,7 +83,8 @@ exports.create = async (req, res, next) => {
         if (!req.body.name)
             return res.status(428).send({ error: "Name cannot be null. " });
         else {
-            const { name, description } = req.body;
+            let { name, description } = req.body;
+            description = description || "";
             Group.create({ name, description }, (error, group) => {
                 if (error)
                     return res.status(500).send({
