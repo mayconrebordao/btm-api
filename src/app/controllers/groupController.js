@@ -92,6 +92,12 @@ exports.create = async (req, res, next) => {
     contract.hasMinLen(req.body.name, 3, 'O nome deve conter pelo menos 3 caracteres'); // Validar tamanho de nome
     contract.hasMaxLen(req.body.description, 150, 'Descrição mutio longa'); // Validar tamanho da descrição
 
+    // Se os dados forem invalidos
+    if (!contract.isValid()) {
+        res.status(400).send(contract.errors()).end;
+        return; // É IMPORTANTE PORQUE SE NÃO A FUNÇÃO CONTINUA E REALIZA A INSERÇÃO
+    }
+
     try {
         if (!req.body.name)
             return res.status(428).send({ error: "Name cannot be null. " });
