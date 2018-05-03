@@ -1,11 +1,14 @@
 const Group = require("../models/Group");
+const User = require("../models/User");
 
 exports.getAll = async (req, res, next) => {
     try {
         Group.find(async (error, groups) => {
             // é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 .
             if (error) {
-                return res.status(404).send({ error: "Group Not found." });
+                return res.status(404).send({
+                    error: "Group Not found."
+                });
             }
             let response = groups.map(group => {
                 group.tasks = group.tasks || [];
@@ -54,7 +57,9 @@ exports.getById = async (req, res, next) => {
         Group.findById(req.params.groupId, async (error, group) => {
             // é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 .
             if (error) {
-                return res.status(404).send({ error: "Group Not found." });
+                return res.status(404).send({
+                    error: "Group Not found."
+                });
             }
             // verificando se o valor de tasks é unfined, caso seja ele recebe um vetor vazio
             group.tasks = group.tasks || [];
@@ -81,11 +86,26 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
     try {
         if (!req.body.name)
-            return res.status(428).send({ error: "Name cannot be null. " });
+            return res.status(428).send({
+                error: "Name cannot be null. "
+            });
         else {
-            let { name, description } = req.body;
+            let {
+                name,
+                description,
+                members,
+                tasks
+            } = req.body;
             description = description || "";
-            Group.create({ name, description }, (error, group) => {
+            Group.create({
+                name,
+                description
+            }, async (error, group) => {
+                // members = [...members, req.params.userId]
+                await Promise.all(members.map(async member => {
+                    await group.members.push(member)
+                    await group.save
+                }))
                 if (error)
                     return res.status(500).send({
                         error: "internal error, please try again."
@@ -94,7 +114,8 @@ exports.create = async (req, res, next) => {
                     return res.send({
                         id: group.id,
                         name: group.name,
-                        description: group.description
+                        description: group.description,
+                        members: group.members
                     });
             });
         }
@@ -111,13 +132,21 @@ exports.update = async (req, res, next) => {
         // verificando se o nome do grupo é fornecido na requisição
         if (!req.body.name)
             // avisa que o nome não pode ser nulo/vazio
-            return res.status(428).send({ error: "Name cannot be null. " });
+            return res.status(428).send({
+                error: "Name cannot be null. "
+            });
         else {
-            const { name, description } = req.body;
+            const {
+                name,
+                description
+            } = req.body;
             Group.findByIdAndUpdate(
-                req.params.groupId,
-                { name, description },
-                { new: true },
+                req.params.groupId, {
+                    name,
+                    description
+                }, {
+                    new: true
+                },
                 (error, group) => {
                     // caso haja erro, o usuário não foi encontrado, é retornado um 404 indicando esse erro.
                     if (error)
@@ -138,7 +167,9 @@ exports.update = async (req, res, next) => {
         // informa o usuário da api que houve um error interno no servidor
         return res
             .status(500)
-            .send({ error: "Internal  error, plaese try again." });
+            .send({
+                error: "Internal  error, plaese try again."
+            });
     }
 };
 
@@ -161,6 +192,8 @@ exports.delete = async (req, res, next) => {
         // informa o usuário da api que houve um error interno no servidor
         return res
             .status(500)
-            .send({ error: "Internal  error, plaese try again." });
+            .send({
+                error: "Internal  error, plaese try again."
+            });
     }
 };

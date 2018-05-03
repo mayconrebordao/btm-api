@@ -2,8 +2,8 @@ const taskControl = require("../controllers/taskController");
 const express = require("express");
 const router = express.Router();
 
-router.get("/", taskControl.getAll);
-router.get("/:taskId", taskControl.getById);
-router.post("/", taskControl.create);
-
+router.get("/:groupId/", taskControl.getAll);
+router.get("/:groupId/:taskId", taskControl.getById);
+router.post("/:groupId/", taskControl.create);
+router.patch('/:groupId/:taskId', )
 module.exports = app => app.use("/task", router);

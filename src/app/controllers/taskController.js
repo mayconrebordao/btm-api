@@ -56,5 +56,12 @@ exports.getById = async (req, res, next) => {
 };
 
 exports.create = async (req, res, next) => {
-    return res.send({ ok: true });
+
+    try {
+
+    } catch (error) {
+        return res.status(500).send({
+            errot: "Internal server Error, please try again."
+        });
+    }
 };

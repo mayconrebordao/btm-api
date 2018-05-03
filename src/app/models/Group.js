@@ -6,19 +6,20 @@ const GroupSchema = new mongoose.Schema({
         require: true
     },
     description: {
-        type: String,
-        require: false
+        type: String
     },
     createAt: {
         type: Date,
         default: Date.now
     },
-    tasks: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Task"
-        }
-    ]
+    members: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    }],
+    tasks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Task"
+    }]
 });
 
 const Group = mongoose.model("Group", GroupSchema);
