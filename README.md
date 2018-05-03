@@ -6,7 +6,6 @@ Rotas disponíveis atualmente:
 
 *   user rotas:
 
-
     *   get /:userId
         *   ver dados de um usuário atraves de seu id
     *   post /
