@@ -1,6 +1,8 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const authConfig = require("../../config/auth.json");
+const validationContract = require('./validator');
+
 
 function generateToken(params = {}) {
     return jwt.sign(params, authConfig.secret, {
@@ -35,6 +37,23 @@ exports.getById = async (req, res, next) => {
 };
 
 exports.create = async (req, res, next) => {
+    let contract = new validationContract();
+    
+    contract.isRequired(req.body.name, 'Nome é obrigatorio'); // Validação do nome sendo obrigatorio
+    contract.hasMinLen(req.body.name, 3, 'Nome de conter pelo menos 3 caracteres'); //Validação do tamanho do nome
+
+    contract.isRequired(req.body.email, 'Email é obrigatorio'); // Validação do nome sendo obrigatorio
+    contract.isEmail(req.body.email, 'Email invalido'); // Validar se o email é valido
+
+    contract.isRequired(req.password, 'Senha é obrigatorio'); // Validação da senha sendo obrigatoria
+    contract.hasMinLen(req.body.password, 6, 'Senha deve conter pelo menos 6 caracteres'); // Validação do tamanho da senha
+
+    // Se os dados forem invalidos
+    if (!contract.isValid()) {
+        res.status(400).send(contract.errors()).end;
+        return; // É IMPORTANTE PORQUE SE NÃO A FUNÇÃO CONTINUA E REALIZA A INSERÇÃO
+    }
+
     try {
         // console.log(req.body);
         const { email } = req.body;

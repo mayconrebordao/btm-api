@@ -1,6 +1,13 @@
 const Group = require("../models/Group");
+const validationContract = require('./validator'); // Importando Validator
 
 exports.getAll = async (req, res, next) => {
+    // Se os dados forem invalidos
+    if (!contract.isValid()) {
+        res.status(400).send(contract.errors()).end;
+        return; // É IMPORTANTE PORQUE SE NÃO A FUNÇÃO CONTINUA E REALIZA A INSERÇÃO
+    }
+
     try {
         Group.find(async (error, groups) => {
             // é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 .
@@ -79,6 +86,12 @@ exports.getById = async (req, res, next) => {
 };
 
 exports.create = async (req, res, next) => {
+    let contract = new validationContract();
+
+    contract.isRequired(req.body.name, 'O nome é obrigatorio'); // Validação da necessidade do nome
+    contract.hasMinLen(req.body.name, 3, 'O nome deve conter pelo menos 3 caracteres'); // Validar tamanho de nome
+    contract.hasMaxLen(req.body.description, 150, 'Descrição mutio longa'); // Validar tamanho da descrição
+
     try {
         if (!req.body.name)
             return res.status(428).send({ error: "Name cannot be null. " });
