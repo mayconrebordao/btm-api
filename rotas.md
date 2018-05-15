@@ -18,7 +18,7 @@ rotas /
         patch /groups/:groupId // atualizar um grupo
         delete /groups/:groupId // deletar um grupo
 
-        Tasks
+        Group Tasks:
             get /groups/:groupId/tasks/         //  Listar todas as tarefas do grupo
             get /groups/:groupId/tasks/:taskId          //  VEr um atarefa especifica do trugo
             post /groups/:groupId/tasks/            //  Criar uma tarefa no grupo
