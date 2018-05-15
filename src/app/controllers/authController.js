@@ -12,7 +12,10 @@ function generateToken(params = {}) {
 }
 
 exports.register = async (req, res, next) => {
-    const { email, password } = req.body;
+    const {
+        email,
+        password
+    } = req.body;
     // verificando se os campos de senha e email não estão vazios
     if (!email || !password) {
         return res.status(428).send({
@@ -21,9 +24,13 @@ exports.register = async (req, res, next) => {
     }
 
     // consulta para verificar se o usuário existe no sistema atraves do email
-    let query = User.findOne({ email }).select("+password");
+    let query = User.findOne({
+        email
+    }).select("+ password");
     query.exec(async (error, user) => {
-        if (error) {
+        console.log(user.email);
+
+        if (!user) {
             return res.status(404).send({
                 error: "User not found."
             });
@@ -35,7 +42,9 @@ exports.register = async (req, res, next) => {
             });
         }
         return res.status(200).send({
-            token: generateToken({ id: user._id })
+            token: generateToken({
+                id: user._id
+            })
         });
     });
 };

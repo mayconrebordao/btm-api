@@ -1,5 +1,6 @@
 const Group = require("../models/Group");
 const User = require("../models/User");
+const UserControl = require('./userController')
 
 exports.getAll = async (req, res, next) => {
     try {
@@ -56,24 +57,29 @@ exports.getById = async (req, res, next) => {
     try {
         Group.findById(req.params.groupId, async (error, group) => {
             // é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 .
-            if (error) {
+            if (!group) {
                 return res.status(404).send({
                     error: "Group Not found."
                 });
+            } else {
+
+                console.log(group);
+
+
+                // verificando se o valor de tasks é unfined, caso seja ele recebe um vetor vazio
+                group.tasks = group.tasks || [];
+                // retornando dados do grupo
+                return res.status(200).send({
+                    id: group._id,
+                    name: group.name,
+                    description: group.description,
+                    tasks: group.tasks.map(task => {
+                        return {
+                            id: task._id
+                        };
+                    })
+                });
             }
-            // verificando se o valor de tasks é unfined, caso seja ele recebe um vetor vazio
-            group.tasks = group.tasks || [];
-            // retornando dados do grupo
-            return res.status(200).send({
-                id: group._id,
-                name: group.name,
-                description: group.description,
-                tasks: group.tasks.map(task => {
-                    return {
-                        id: task._id
-                    };
-                })
-            });
         });
     } catch (error) {
         // informa o usuário da api que houve um error interno no servidor
@@ -93,30 +99,48 @@ exports.create = async (req, res, next) => {
             let {
                 name,
                 description,
-                members,
-                tasks
+                members
             } = req.body;
             description = description || "";
             Group.create({
                 name,
                 description
             }, async (error, group) => {
-                // members = [...members, req.params.userId]
-                await Promise.all(members.map(async member => {
-                    await group.members.push(member)
-                    await group.save
-                }))
+
                 if (error)
                     return res.status(500).send({
                         error: "internal error, please try again."
                     });
-                else
-                    return res.send({
-                        id: group.id,
-                        name: group.name,
-                        description: group.description,
-                        members: group.members
-                    });
+                else {
+                    await group.members.push(req.userId)
+                    await Promise.all(members.map(async member => {
+                        await group.members.push(member)
+                    }))
+                    await group.save()
+
+                    await UserControl.addIdGroupInUsers(group.id, group.members)
+
+                    const query = Group.findById(group.id).populate('members')
+                    query.exec((error, query_group) => {
+                        if (query_group)
+
+                            return res.send({
+                                id: query_group.id,
+                                name: query_group.name,
+                                description: query_group.description,
+                                members: query_group.members.map(member => {
+                                    return {
+                                        id: member.id,
+                                        name: member.name,
+                                        email: member.email
+                                    }
+                                })
+                            });
+
+                    })
+
+                }
+
             });
         }
     } catch (error) {
@@ -136,34 +160,101 @@ exports.update = async (req, res, next) => {
                 error: "Name cannot be null. "
             });
         else {
-            const {
+            let {
+                name,
+                description,
+                members
+            } = req.body;
+            description = description || "";
+            const grupo = await Group.findById(req.params.groupId)
+            if (!grupo)
+                return res.status(404).send({
+                    error: "Group Not Found."
+                })
+            Group.findByIdAndUpdate(req.params.groupId, {
                 name,
                 description
-            } = req.body;
-            Group.findByIdAndUpdate(
-                req.params.groupId, {
-                    name,
-                    description
-                }, {
-                    new: true
-                },
-                (error, group) => {
-                    // caso haja erro, o usuário não foi encontrado, é retornado um 404 indicando esse erro.
-                    if (error)
-                        return res.status(404).send({
-                            error: "Group not found, please try again."
-                        });
-                    // caso contrário os dados atualizados do usuário são retornados.
-                    else
-                        return res.send({
-                            id: group.id,
-                            name: group.name,
-                            description: group.description
-                        });
+            }, {
+                new: true
+            }, async (error, group) => {
+
+
+                if (error) {
+
+                    // console.log(error);
+
+                    return res.status(500).send({
+                        error: "internal error, please try again."
+                    });
+                } else {
+                    // console.log(group.members);
+
+                    let aux_members = []
+                    // members.push({
+                    //     _id: req.userId
+                    // })
+                    for (let i = 0; i < group.members.length; i++) {
+                        if (!members.find(memb => {
+                                // console.log("memb");
+
+                                // console.log(memb._id);
+                                // console.log("group.members");
+
+                                // console.log(group.members[i].toString());
+                                return memb._id.toString() === group.members[i].toString()
+                            })) {
+                            // console.log(group.members[i]);
+
+                            aux_members.push(group.members[i])
+                        }
+
+                    }
+                    // console.log("aux_members ");
+
+                    // console.log(
+                    //     aux_members);
+
+                    await UserControl.removeIdGroupInUsers(group.id, aux_members)
+                    group.members = []
+                    await group.members.push(req.userId);
+                    await Promise.all(members.map(async member => {
+                        await group.members.push(member)
+                    }))
+                    await group.save()
+                    await UserControl.addIdGroupInUsers(group.id, group.members)
+
+                    const query = Group.findById(group.id).populate('members')
+                    query.exec((error, query_group) => {
+                        if (query_group)
+
+                            // await query_group.members.map(async member =>{
+                            //     User.findByIdAndUpdate(member.id)
+                            // })
+
+                            return res.send({
+                                id: query_group.id,
+                                name: query_group.name,
+                                description: query_group.description,
+                                members: query_group.members.map(member => {
+                                    // console.log(member.id, member._id);
+
+                                    return {
+                                        id: member.id,
+                                        name: member.name,
+                                        email: member.email
+                                    }
+                                })
+                            });
+
+                    })
+
                 }
-            );
+
+            });
         }
     } catch (error) {
+        console.log(error);
+
         // informa o usuário da api que houve um error interno no servidor
         return res
             .status(500)
@@ -176,6 +267,10 @@ exports.update = async (req, res, next) => {
 // rota para deletar um groupo
 exports.delete = async (req, res, next) => {
     try {
+        const group = await Group.findById(req.params.groupId)
+        await UserControl.removeIdGroupInUsers(group.id, group.members)
+
+
         Group.findByIdAndRemove(req.params.groupId, (error, group) => {
             // verificando se o grupo foi encontrado, caso não seja encontrado significa que o grupo não existe mais ou nunca existiu, por isso é retornado um 410.
             if (error)
@@ -183,12 +278,17 @@ exports.delete = async (req, res, next) => {
                     error: "Group not found, please try again."
                 });
             // caso não esta erro,  ele foi deletado com sucesso, é retornado uma messagem e um 202.
-            else
+            else {
+
+
                 return res.status(202).send({
                     message: "User delete Successfull"
                 });
+            }
         });
     } catch (error) {
+        console.log(error);
+
         // informa o usuário da api que houve um error interno no servidor
         return res
             .status(500)

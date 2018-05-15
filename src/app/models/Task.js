@@ -19,14 +19,13 @@ const TaskSchema = new mongoose.Schema({
     },
     private: {
         type: Boolean,
-        default: false
+        default: false,
+        require: true
     },
-    users: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User"
-        }
-    ]
+    users: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    }]
 });
 
 const Task = mongoose.model("Task", TaskSchema);

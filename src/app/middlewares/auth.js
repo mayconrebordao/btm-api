@@ -5,8 +5,7 @@ module.exports = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         return res.status(401).send({
-            error:
-                "The request has not been applied because it lacks valid authentication credentials for the target resource. No token provided."
+            error: "The request has not been applied because it lacks valid authentication credentials for the target resource. No token provided."
         });
     }
 
@@ -14,8 +13,7 @@ module.exports = (req, res, next) => {
 
     if (!parts.length === 2) {
         return res.status(412).send({
-            error:
-                "One or more conditions given in the request header fields evaluated to false when tested on the server. Token format invalid or Token not fount in headers."
+            error: "One or more conditions given in the request header fields evaluated to false when tested on the server. Token format invalid or Token not fount in headers."
         });
     }
 
@@ -25,8 +23,7 @@ module.exports = (req, res, next) => {
         return res
             .status(412)
             .send({
-                error:
-                    "One or more conditions given in the request header fields evaluated to false when tested on the server. Token format invalid."
+                error: "One or more conditions given in the request header fields evaluated to false when tested on the server. Token format invalid."
             });
     }
 
@@ -35,12 +32,11 @@ module.exports = (req, res, next) => {
             return res
                 .status(412)
                 .send({
-                    error:
-                        "One or more conditions given in the request header fields evaluated to false when tested on the server. Token invalid or token not fund in headers."
+                    error: "One or more conditions given in the request header fields evaluated to false when tested on the server. Token invalid or token not fund in headers."
                 });
         }
         req.userId = decoded.id;
-        console.log(req.userId);
+        // console.log(req.userId);
         return next();
     });
 };
