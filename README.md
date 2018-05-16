@@ -2,26 +2,11 @@
 
 API provedora de recursos pata aplicação btm
 
-Rotas disponíveis atualmente:
+Para acessar todas as funcionalidades da API o usuário precisará estar logado na API, toda o esquema de autenticação é feita usando Beare JWT (jsonwebtoken).
 
-*   user rotas:
+Para Autenticar :
+/authenticate
+Para se registar( Criar uma conta/Usuário):
+/register
 
-    *   get /:userId
-        *   ver dados de um usuário atraves de seu id
-    *   post /
-        *   criar um usuário,
-    *   update /:userId
-        *   atualiza dados de um usuário atraves de seu id
-    *   delete /:userId
-        *   delete um usuário atraves de seu id
-
-*   groups rotas:
-
-    *   get /:userId
-        *   ver dados de um grupo atraves de seu id
-    *   post /
-        *   criar um grupo,
-    *   update /:userId
-        *   atualiza dados de um grupo atraves de seu id
-    *   delete /:userId
-        *   delete um grupo atraves de seu id
+Toads as outras rotas estão em [Rotas](#rotas.md)
