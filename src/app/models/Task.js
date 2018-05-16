@@ -22,6 +22,10 @@ const TaskSchema = new mongoose.Schema({
         default: false,
         require: true
     },
+    belongs_to: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group"
+    },
     users: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"

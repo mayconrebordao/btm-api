@@ -4,8 +4,9 @@ const UserControl = require('./userController')
 
 exports.getAll = async (req, res, next) => {
     try {
-        Group.find(async (error, groups) => {
-            // é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 .
+        const query = Group.find().populate(['tasks', 'members'])
+        query.exec(async (error, groups) => {
+            /* é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 . */
             if (error) {
                 return res.status(404).send({
                     error: "Group Not found."
@@ -17,9 +18,17 @@ exports.getAll = async (req, res, next) => {
                     id: group._id,
                     name: group.name,
                     description: group.description,
+                    members: group.members.map(member => {
+                        return {
+                            id: member._id,
+                            name: member.name,
+                            email: member.email
+                        }
+                    }),
                     tasks: group.tasks.map(task => {
                         return {
-                            id: task._id
+                            id: task._id,
+                            name: task.name
                         };
                     })
                 };
@@ -31,22 +40,9 @@ exports.getAll = async (req, res, next) => {
             } else {
                 return res.send(response);
             }
-            // verificando se o valor de tasks é unfined, caso seja ele recebe um vetor vazio
-            // group.tasks = group.tasks || [];
-            // // retornando dados do grupo
-            // return res.status(200).send({
-            //     id: group._id,
-            //     name: group.name,
-            //     description: group.description,
-            //     tasks: group.tasks.map(task => {
-            //         return {
-            //             id: task._id
-            //         };
-            //     })
-            // });
         });
     } catch (error) {
-        // informa o usuário da api que houve um error interno no servidor
+        /* informa o usuário da api que houve um error interno no servidor */
         return res.status(500).send({
             error: "Internal  error, plaese try again."
         });
@@ -55,34 +51,39 @@ exports.getAll = async (req, res, next) => {
 
 exports.getById = async (req, res, next) => {
     try {
-        Group.findById(req.params.groupId, async (error, group) => {
-            // é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 .
+        const query = Group.findById(req.params.groupId).populate(['members', 'tasks'])
+        query.exec(async (error, group) => {
+            /* é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 . */
             if (!group) {
                 return res.status(404).send({
                     error: "Group Not found."
                 });
             } else {
-
-                console.log(group);
-
-
-                // verificando se o valor de tasks é unfined, caso seja ele recebe um vetor vazio
+                /*  verificando se o valor de tasks é unfined, caso seja ele recebe um vetor vazio */
                 group.tasks = group.tasks || [];
-                // retornando dados do grupo
+                /* retornando dados do grupo */
                 return res.status(200).send({
                     id: group._id,
                     name: group.name,
                     description: group.description,
+                    members: group.members.map(member => {
+                        return {
+                            id: member._id,
+                            name: member.name,
+                            email: member.email
+                        }
+                    }),
                     tasks: group.tasks.map(task => {
                         return {
-                            id: task._id
+                            id: task._id,
+                            name: trask.name
                         };
                     })
                 });
             }
         });
     } catch (error) {
-        // informa o usuário da api que houve um error interno no servidor
+        /* informa o usuário da api que houve um error interno no servidor */
         return res.status(500).send({
             error: "Internal  error, plaese try again."
         });
@@ -106,7 +107,6 @@ exports.create = async (req, res, next) => {
                 name,
                 description
             }, async (error, group) => {
-
                 if (error)
                     return res.status(500).send({
                         error: "internal error, please try again."
@@ -117,13 +117,10 @@ exports.create = async (req, res, next) => {
                         await group.members.push(member)
                     }))
                     await group.save()
-
                     await UserControl.addIdGroupInUsers(group.id, group.members)
-
                     const query = Group.findById(group.id).populate('members')
                     query.exec((error, query_group) => {
                         if (query_group)
-
                             return res.send({
                                 id: query_group.id,
                                 name: query_group.name,
@@ -136,7 +133,6 @@ exports.create = async (req, res, next) => {
                                     }
                                 })
                             });
-
                     })
 
                 }
@@ -144,7 +140,7 @@ exports.create = async (req, res, next) => {
             });
         }
     } catch (error) {
-        // informa o usuário da api que houve um error interno no servidor
+        /* informa o usuário da api que houve um error interno no servidor */
         return res.status(500).send({
             error: "Internal  error, plaese try again."
         });
@@ -153,9 +149,9 @@ exports.create = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
     try {
-        // verificando se o nome do grupo é fornecido na requisição
+        /* verificando se o nome do grupo é fornecido na requisição */
         if (!req.body.name)
-            // avisa que o nome não pode ser nulo/vazio
+            /* avisa que o nome não pode ser nulo/vazio */
             return res.status(428).send({
                 error: "Name cannot be null. "
             });
@@ -177,43 +173,20 @@ exports.update = async (req, res, next) => {
             }, {
                 new: true
             }, async (error, group) => {
-
-
                 if (error) {
-
-                    // console.log(error);
-
                     return res.status(500).send({
                         error: "internal error, please try again."
                     });
                 } else {
-                    // console.log(group.members);
-
                     let aux_members = []
-                    // members.push({
-                    //     _id: req.userId
-                    // })
                     for (let i = 0; i < group.members.length; i++) {
                         if (!members.find(memb => {
-                                // console.log("memb");
-
-                                // console.log(memb._id);
-                                // console.log("group.members");
-
-                                // console.log(group.members[i].toString());
                                 return memb._id.toString() === group.members[i].toString()
                             })) {
-                            // console.log(group.members[i]);
-
                             aux_members.push(group.members[i])
                         }
 
                     }
-                    // console.log("aux_members ");
-
-                    // console.log(
-                    //     aux_members);
-
                     await UserControl.removeIdGroupInUsers(group.id, aux_members)
                     group.members = []
                     await group.members.push(req.userId);
@@ -222,22 +195,14 @@ exports.update = async (req, res, next) => {
                     }))
                     await group.save()
                     await UserControl.addIdGroupInUsers(group.id, group.members)
-
                     const query = Group.findById(group.id).populate('members')
                     query.exec((error, query_group) => {
                         if (query_group)
-
-                            // await query_group.members.map(async member =>{
-                            //     User.findByIdAndUpdate(member.id)
-                            // })
-
                             return res.send({
                                 id: query_group.id,
                                 name: query_group.name,
                                 description: query_group.description,
                                 members: query_group.members.map(member => {
-                                    // console.log(member.id, member._id);
-
                                     return {
                                         id: member.id,
                                         name: member.name,
@@ -253,9 +218,7 @@ exports.update = async (req, res, next) => {
             });
         }
     } catch (error) {
-        console.log(error);
-
-        // informa o usuário da api que houve um error interno no servidor
+        /* informa o usuário da api que houve um error interno no servidor */
         return res
             .status(500)
             .send({
@@ -264,32 +227,26 @@ exports.update = async (req, res, next) => {
     }
 };
 
-// rota para deletar um groupo
+/* rota para deletar um groupo */
 exports.delete = async (req, res, next) => {
     try {
         const group = await Group.findById(req.params.groupId)
         await UserControl.removeIdGroupInUsers(group.id, group.members)
-
-
         Group.findByIdAndRemove(req.params.groupId, (error, group) => {
-            // verificando se o grupo foi encontrado, caso não seja encontrado significa que o grupo não existe mais ou nunca existiu, por isso é retornado um 410.
+            /* verificando se o grupo foi encontrado, caso não seja encontrado significa que o grupo não existe mais ou nunca existiu, por isso é retornado um 410. */
             if (error)
                 return res.status(410).send({
                     error: "Group not found, please try again."
                 });
-            // caso não esta erro,  ele foi deletado com sucesso, é retornado uma messagem e um 202.
+            /* caso não esta erro,  ele foi deletado com sucesso, é retornado uma messagem e um 202. */
             else {
-
-
                 return res.status(202).send({
-                    message: "User delete Successfull"
+                    message: "Group delete Successfull"
                 });
             }
         });
     } catch (error) {
-        console.log(error);
-
-        // informa o usuário da api que houve um error interno no servidor
+        /* informa o usuário da api que houve um error interno no servidor */
         return res
             .status(500)
             .send({
@@ -297,3 +254,59 @@ exports.delete = async (req, res, next) => {
             });
     }
 };
+
+
+
+/* método para adicionar a referência de uma tarefa a um grupo */
+exports.addIdTaskInGroup = async (groupId, taskId) => {
+    try {
+        const group = await Group.findById(groupId)
+        if (!group.tasks.find(task => {
+                return task === taskId
+            })) {
+            await group.tasks.push(taskId)
+            let {
+                name,
+                description,
+                members,
+                tasks
+            } = group
+            await Group.findByIdAndUpdate(groupId, {
+                name,
+                description,
+                members,
+                tasks
+            })
+        }
+        return true
+
+    } catch (error) {
+        return false
+    }
+}
+
+/* método para remover a referência de uma tarefa de um grupo */
+exports.removeIdTaskInGroup = async (groupId, taskId) => {
+    try {
+        const group = await Group.findById(groupId)
+        group.tasks = group.tasks.filter(task => {
+            return task.toString() !== taskId.toString()
+        })
+        let {
+            name,
+            description,
+            members,
+            tasks
+        } = group
+        await Group.findByIdAndUpdate(groupId, {
+            name,
+            description,
+            members,
+            tasks
+        })
+        return true
+
+    } catch (error) {
+        return false
+    }
+}

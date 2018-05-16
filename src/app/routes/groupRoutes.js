@@ -14,10 +14,10 @@ router.patch("/:groupId", groupControl.update);
 router.delete("/:groupId", groupControl.delete);
 
 // rotas de das tarefas dos grupos
-router.get("/:groupId/tasks/", taskControl.getAll);
-router.get("/:groupId/tasks/:taskId", taskControl.getById);
-router.post("/:groupId/tasks/", taskControl.create);
-router.patch("/:groupId/tasks/:taskId", taskControl.update);
+// router.get("/:groupId/tasks/", taskControl.getAll);
+// router.get("/:groupId/tasks/:taskId", taskControl.getById);
+// router.post("/:groupId/tasks/", taskControl.create);
+// router.patch("/:groupId/tasks/:taskId", taskControl.update);
 
 
 

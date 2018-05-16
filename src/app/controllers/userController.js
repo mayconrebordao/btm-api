@@ -8,23 +8,18 @@ function generateToken(params = {}) {
     });
 }
 
-// {  "name": "jiren",  "email": "jose@email.com",  "password": "teste"}
-
-// rota para listar todos os usuários
-
-
+/* rota para listar todos os usuários */
 exports.getAll = async (req, res, next) => {
-    const query = User.find().populate("groupTask");
+    const query = User.find().populate("groupTasks");
     query.exec(async (error, docs) => {
         if (docs) {
-            // console.log(docs);
             const users = docs.map(doc => {
-                doc.groupTask = doc.groupTask || [];
+                doc.groupTasks = doc.groupTasks || [];
                 return {
                     id: doc._id,
                     name: doc.name,
                     email: doc.email,
-                    groups: doc.groupTask.map(group => {
+                    groups: doc.groupTasks.map(group => {
                         return {
                             id: group._id,
                             name: group.name,
@@ -42,23 +37,17 @@ exports.getAll = async (req, res, next) => {
     });
 };
 
-
-
-
-
-
-// Rota para listar apenas um usuário
+/* Rota para listar apenas um usuário */
 exports.getById = async (req, res, next) => {
-    const query = User.findById(req.params.userId).populate("groupTask");
+    const query = User.findById(req.params.userId).populate("groupTasks");
     query.exec(async (error, doc) => {
         if (doc) {
-            // console.log(doc);
-            doc.groupTask = doc.groupTask || [];
+            doc.groupTasks = doc.groupTasks || [];
             const user = {
                 id: doc._id,
                 name: doc.name,
                 email: doc.email,
-                groups: doc.groupTask.map(group => {
+                groups: doc.groupTasks.map(group => {
                     return {
                         id: group._id,
                         name: group.name,
@@ -77,19 +66,18 @@ exports.getById = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
     try {
-        // console.log(req.body);
         const {
             email
         } = req.body;
 
-        // verificando se os dados de cadastro do usário não estão vazios
+        /* verificando se os dados de cadastro do usário não estão vazios */
         if (!req.body.name || !req.body.password || !req.body.email) {
             return res.status(428).send({
                 error: "Email, password or name  is null, but can not be null."
             });
         }
 
-        // verificando se o email ja esta cadastrado no sistema, ou seja, se o usuário ja existe
+        /* verificando se o email ja esta cadastrado no sistema, ou seja, se o usuário ja existe */
         if (await User.findOne({
                 email
             })) {
@@ -97,10 +85,8 @@ exports.create = async (req, res, next) => {
                 error: "email is already in using!!"
             });
         }
-        // criando usuário
+        /* criando usuário */
         User.create(req.body, (error, user) => {
-            // console.clear()
-            // console.log(user)
             if (error) {
                 return res.status(500).send({
                     error: "Intenal error, please try again."
@@ -126,15 +112,13 @@ exports.create = async (req, res, next) => {
     }
 };
 
-// Rota para atualizar usuários
+/* Rota para atualizar usuários */
 exports.update = async (req, res, next) => {
     const {
         name,
         password,
         email
     } = req.body;
-    // console.clear()
-    // console.log({ name, password, ema })
     if (!name || !password || !email) {
         return res.status(428).send({
             error: "Email, password or name is null, but can not be null."
@@ -150,7 +134,6 @@ exports.update = async (req, res, next) => {
             new: true
         },
         (error, user) => {
-            // console.log(user)
             if (error)
                 return res.status(500).send({
                     error: "Internla error, please try again."
@@ -184,18 +167,16 @@ exports.delete = async (req, res, next) => {
     }
 };
 
-
+/* método para adicionar a referência de um grupo a um usuário */
 exports.addIdGroupInUsers = async (groupId, users) => {
     try {
-        // console.log(users)
         for (let i = 0; i < users.length; i++) {
             const user = await User.findById(users[i])
-            // console.log(user);
-            // let groupTasks = user.groupTasks
             if (user.groupTasks.length === 0) {
                 user.groupTasks.push(groupId)
             } else {
                 let check = false
+                /* verificando se o id do grupo ja existe na lista de grupos do usuário */
                 for (let j = 0; j < user.groupTask.length; j++) {
                     if (user.groupTask[j] === groupId)
                         check = true
@@ -205,57 +186,27 @@ exports.addIdGroupInUsers = async (groupId, users) => {
                     await user.groupTasks.push(groupId)
                 }
             }
-            // console.log(user)
             await User.findByIdAndUpdate(users[i], user, {
                 new: true
-            }, async (error, user) => {
-                // if (user) console.log(user);
-
             })
         }
         return true
-        // await Promise.all(
-        // )
     } catch (error) {
         return error
     }
 }
 
+/* método para remover a referência de um grupo de um usuário */
 exports.removeIdGroupInUsers = async (groupId, users) => {
     try {
-        // console.log(users)
         for (let i = 0; i < users.length; i++) {
             const user = await User.findById(users[i])
-            console.log(user.groupTasks);
-
             let tasks = []
-            console.log("filter " +
-                user.groupTasks.filter(task => {
-                    return task.toString() !== groupId.toString()
-                }));
-
+            /* removendo apenas um grupo da lista de grupos do usuários */
             user.groupTasks = user.groupTasks.filter(group => {
-                // console.log(group);
-                // console.log(groupId);
-
-
                 return group.toString() !== groupId.toString()
             })
 
-            // if (user.groupTasks.length === 0) {
-            //     user.groupTasks.push(groupId)
-            // } else {
-            //     let check = false
-            //     for (let j = 0; j < user.groupTask.length; j++) {
-            //         if (user.groupTask[j] === groupId)
-            //             check = true
-
-            //     }
-            //     if (!check) {
-            //         await user.groupTasks.push(groupId)
-            //     }
-            // }
-            console.log(user)
             const {
                 name,
                 email,
@@ -269,9 +220,6 @@ exports.removeIdGroupInUsers = async (groupId, users) => {
                 groupTasks
             }, {
                 new: true
-            }, async (error, user) => {
-                // if (user) console.log(user);
-
             })
         }
         return true

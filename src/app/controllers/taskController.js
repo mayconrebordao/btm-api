@@ -1,8 +1,13 @@
 const Task = require("../models/Task");
+const User = require("../models/User");
+const GroupControl = require('../controllers/groupController')
 
 exports.getAll = async (req, res, next) => {
     try {
-        Task.find((error, tasks) => {
+        const query = Task.find({
+            belongs_to: req.groupId
+        }).populate(['belongs_to', 'users'])
+        query.exec((error, tasks) => {
             if (error) {
                 return res.status(500).send({
                     errot: "Internal server Error, please try again."
@@ -10,14 +15,24 @@ exports.getAll = async (req, res, next) => {
             } else {
                 let response = tasks.map(task => {
                     task.users = task.users || [];
-                    // if(task.users)
                     return {
                         id: task._id,
                         name: task.name,
                         category: task.category,
                         description: task.description,
                         deadline: task.deadline,
-                        users: task.users
+                        belongs_to: {
+                            id: task.belongs_to.id,
+                            group_name: task.belongs_to.name,
+                            description: task.belongs_to.description
+                        },
+                        users: task.users.map(user => {
+                            return {
+                                id: user.id,
+                                name: user.name,
+                                email: user.email
+                            }
+                        })
                     };
                 });
                 if (response.length === 0) {
@@ -36,13 +51,32 @@ exports.getAll = async (req, res, next) => {
 
 exports.getById = async (req, res, next) => {
     try {
-        Task.findById(req.params.taskId, (error, task) => {
-            if (error) {
-                return res.status(404).send({
-                    error: "Task not found."
+        const query = Task.findById(req.params.taskId).populate(['belongs_to', 'users'])
+        query.exec((error, task) => {
+            if (!task) {
+                return res.status(410).send({
+                    error: "No tasks found."
                 });
             } else {
-                return res.send(task);
+                return res.send({
+                    id: task._id,
+                    name: task.name,
+                    category: task.category,
+                    description: task.description,
+                    deadline: task.deadline,
+                    belongs_to: {
+                        id: task.belongs_to.id,
+                        group_name: task.belongs_to.name,
+                        description: task.belongs_to.description
+                    },
+                    users: task.users.map(user => {
+                        return {
+                            id: user.id,
+                            name: user.name,
+                            email: user.email
+                        }
+                    })
+                });
             }
         });
     } catch (error) {
@@ -55,7 +89,7 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
 
     try {
-        if (!req.body.name || !req.body.category || req.body.private) {
+        if (!req.body.name || !req.body.category || req.body.private === undefined) {
             return res.status(428).send({
                 error: "Pre condition failed, please verify request body a d try again. "
             })
@@ -69,43 +103,81 @@ exports.create = async (req, res, next) => {
             users
         } = req.body
         description = description || ""
-        users = [...users, {
-            userId: req.userId
-        }]
-        // console.log(users);
+        users = users || []
+        users = users.map(user => {
+            return {
+                _id: user.userId
+            }
+        })
+        users.push({
+            _id: req.userId
+        })
+        let check = [],
+            aux = []
+        for (let i = 0; i < users.length; i++) {
+            try {
+                if (!await User.findById(users[i])) {
+                    check.push(users[i])
+                } else {
+                    aux.push(users[i])
+                }
 
+            } catch (error) {
+
+                check.push(users[i])
+            }
+
+        }
+        users = aux
         Task.create({
             name,
             description,
             private,
             category,
-            deadline
+            deadline,
+            belongs_to: req.groupId
         }, async (error, task) => {
             if (!error) {
-                console.log("teste");
-
-                users = users.map(user => {
-                    return {
-                        _id: user.userId
-                    }
-                })
-                console.log(users);
                 await Promise.all(users.map(async user => {
                     await task.users.push(user)
                 }))
                 await task.save()
-
-                return res.status(200).send({
-                    id: task._id,
-                    name: task.name,
-                    description: task.description,
-                    deadline: task.deadline,
-                    private: task.private,
-                    users: users.map(user => {
-                        return {
-                            id: user._id
+                await GroupControl.addIdTaskInGroup(req.groupId, task.id)
+                const query = Task.findById(task._id).populate(['users', 'belongs_to'])
+                query.exec(async (error, task) => {
+                    if (task) {
+                        let response = {
+                            id: task._id,
+                            name: task.name,
+                            category: task.category,
+                            description: task.description,
+                            deadline: task.deadline,
+                            belongs_to: {
+                                id: task.belongs_to.id,
+                                group_name: task.belongs_to.name,
+                                description: task.belongs_to.description
+                            },
+                            users: task.users.map(user => {
+                                return {
+                                    id: user.id,
+                                    name: user.name,
+                                    email: user.email
+                                }
+                            })
+                        };
+                        if (check.length !== 0) {
+                            response.msg = {
+                                error: "Alguns usuários informados não foram encontrados, segue a lista:",
+                                users: check
+                            }
                         }
-                    })
+                        return res.status(200).send(response)
+                    } else {
+                        return res.status(500).send({
+                            error: "Internal server error, please try again"
+                        })
+
+                    }
                 })
             } else
                 return res.status(500).send({
@@ -124,11 +196,12 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
 
     try {
-        if (!req.body.name || !req.body.category || req.body.private) {
+        if (!req.body.name || !req.body.category || req.body.private === undefined) {
             return res.status(428).send({
                 error: "Pre condition failed, please verify request body a d try again. "
             })
         }
+
         let {
             name,
             description,
@@ -138,54 +211,93 @@ exports.update = async (req, res, next) => {
             users
         } = req.body
         description = description || ""
-        users = [...users, {
-            userId: req.userId
-        }]
-        // console.log(users);
 
+        users = users || []
+        users = users.map(user => {
+            return {
+                _id: user.userId
+            }
+        })
+        users.push({
+            _id: req.userId
+        })
+        let check = [],
+            aux = []
+        for (let i = 0; i < users.length; i++) {
+            try {
+                if (!await User.findById(users[i])) {
+                    check.push(users[i])
+                } else {
+                    aux.push(users[i])
+                }
+
+            } catch (error) {
+
+                check.push(users[i])
+            }
+        }
+        users = aux
+        const tarefa = await Task.findById(req.params.taskId)
         Task.findByIdAndUpdate(req.params.taskId, {
-            name,
-            description,
-            private,
-            category,
-            deadline
-        }, {
-            new: true
-        }, async (error, task) => {
-            if (!error) {
-                console.log("teste");
+                name,
+                description,
+                private,
+                category,
+                deadline,
+                belongs_to: req.groupId
+            }, {
+                new: true,
+                populate: 'belongs_to'
+            },
+            async (error, task) => {
+                if (task) {
+                    let aux_members = []
+                    task.users = []
+                    await Promise.all(users.map(async user => {
+                        await task.users.push(user)
+                    }))
+                    await task.save()
+                    const query = Task.findById(task._id).populate(['users', 'belongs_to'])
+                    query.exec(async (error, task) => {
+                        if (task) {
+                            const response = {
+                                id: task._id,
+                                name: task.name,
+                                category: task.category,
+                                description: task.description,
+                                deadline: task.deadline,
+                                belongs_to: {
+                                    id: task.belongs_to.id,
+                                    group_name: task.belongs_to.name,
+                                    description: task.belongs_to.description
+                                },
+                                users: task.users.map(user => {
+                                    return {
+                                        id: user.id,
+                                        name: user.name,
+                                        email: user.email
+                                    }
+                                })
+                            };
+                            if (check.length !== 0) {
+                                response.msg = {
+                                    error: "Alguns usuários informados não foram encontrados, segue a lista:",
+                                    users: check
+                                }
+                            }
+                            return res.status(200).send(response)
+                        } else {
+                            return res.status(500).send({
+                                error: "Internal server error, please try again"
+                            })
 
-                users = users.map(user => {
-                    return {
-                        _id: user.userId
-                    }
-                })
-                console.log(users);
-                // removendo as tasks 
-                // await Task.remove({id: req.params.taskId})
-                task.users = []
-                await Promise.all(users.map(async user => {
-                    await task.users.push(user)
-                }))
-                await task.save()
-
-                return res.status(200).send({
-                    id: task._id,
-                    name: task.name,
-                    description: task.description,
-                    deadline: task.deadline,
-                    private: task.private,
-                    users: users.map(user => {
-                        return {
-                            id: user._id
                         }
                     })
-                })
-            } else
-                return res.status(500).send({
-                    error: "Internal server error, please try again"
-                })
-        })
+                } else
+                    return res.status(404).send({
+                        error: "Task Not Found."
+                    })
+            })
     } catch (error) {
         console.log(error);
 
@@ -194,3 +306,34 @@ exports.update = async (req, res, next) => {
         });
     }
 };
+
+/* removendo tarefa */
+exports.remove = async (req, res, next) => {
+    try {
+        const task = Task.findById(req.params.taskId)
+        if (!task)
+            return res.status(404).send({
+                error: "Task Not Found."
+            })
+        else {
+
+            await GroupControl.removeIdTaskInGroup(req.groupId, req.params.taskId)
+            Task.findByIdAndRemove(req.params.taskId, (error) => {
+                if (!error) {
+                    return res.status(202).send({
+                        msg: "Task Delete Successfull."
+                    })
+                } else {
+                    return res.status(500).send({
+                        errot: "Internal server Error, please try again."
+                    });
+                }
+            })
+
+        }
+    } catch (error) {
+        return res.status(500).send({
+            errot: "Internal server Error, please try again."
+        });
+    }
+}

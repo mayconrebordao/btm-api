@@ -1,9 +1,13 @@
 const taskControl = require("../controllers/taskController");
+const groupMiddle = require('../middlewares/groupMiddleware')
 const express = require("express");
 const router = express.Router();
 
-router.get("/:groupId/", taskControl.getAll);
-router.get("/:groupId/:taskId", taskControl.getById);
-router.post("/:groupId/", taskControl.create);
-router.patch('/:groupId/:taskId', )
-module.exports = app => app.use("/task", router);
+router.get("/:groupId/tasks/", groupMiddle.groupExists, taskControl.getAll);
+router.get("/:groupId/tasks/:taskId", groupMiddle.groupExists, taskControl.getById);
+router.post("/:groupId/tasks/", groupMiddle.groupExists, taskControl.create);
+router.patch("/:groupId/tasks/:taskId", groupMiddle.groupExists, taskControl.update);
+router.delete("/:groupId/tasks/:taskId", groupMiddle.groupExists, taskControl.remove);
+// module.exports = app => app.use("/task", router);
+
+module.exports = app => app.use("/groups", router);
