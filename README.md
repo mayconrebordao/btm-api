@@ -9,4 +9,4 @@ Para Autenticar :
 Para se registar( Criar uma conta/Usuário):
 /register
 
-Toads as outras rotas estão em [Rotas](#rotas.md)
+Toads as outras rotas estão em [Rotas](./rotas.md)
