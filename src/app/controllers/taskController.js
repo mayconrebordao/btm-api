@@ -240,8 +240,14 @@ exports.update = async (req, res, next) => {
             }
         }
         users = aux
-        const tarefa = await Task.findById(req.params.taskId)
-        Task.findByIdAndUpdate(req.params.taskId, {
+        const tarefa = await Task.findOne({
+            _id: req.params.taskId,
+            belongs_to: req.groupId
+        })
+        Task.findOneAndUpdate({
+                _id: req.params.taskId,
+                belongs_to: req.groupId
+            }, {
                 name,
                 description,
                 private,
@@ -313,7 +319,10 @@ exports.update = async (req, res, next) => {
 /* removendo tarefa */
 exports.remove = async (req, res, next) => {
     try {
-        const task = Task.findById(req.params.taskId)
+        const task = Task.findOne({
+            _id: req.params.taskId,
+            belongs_to: req.groupId
+        })
         if (!task)
             return res.status(404).send({
                 error: "Task Not Found."
@@ -321,7 +330,10 @@ exports.remove = async (req, res, next) => {
         else {
 
             await GroupControl.removeIdTaskInGroup(req.groupId, req.params.taskId)
-            Task.findByIdAndRemove(req.params.taskId, (error) => {
+            Task.findOneAndRemove({
+                _id: req.params.taskId,
+                belongs_to: req.groupId
+            }, (error) => {
                 if (!error) {
                     return res.status(202).send({
                         msg: "Task Delete Successfull."

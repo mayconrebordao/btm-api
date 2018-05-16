@@ -173,12 +173,24 @@ exports.update = async (req, res, next) => {
                 members
             } = req.body;
             description = description || "";
-            const grupo = await Group.findById(req.params.groupId)
+            const grupo = await Group.findOne({
+
+                _id: req.params.groupId,
+                members: {
+                    "$in": [req.userId]
+                }
+            })
             if (!grupo)
                 return res.status(404).send({
                     error: "Group Not Found."
                 })
-            Group.findByIdAndUpdate(req.params.groupId, {
+            Group.findOneAndUpdate({
+
+                _id: req.params.groupId,
+                members: {
+                    "$in": [req.userId]
+                }
+            }, {
                 name,
                 description
             }, {
@@ -241,9 +253,21 @@ exports.update = async (req, res, next) => {
 /* rota para deletar um groupo */
 exports.delete = async (req, res, next) => {
     try {
-        const group = await Group.findById(req.params.groupId)
+        const group = await Group.findOne({
+
+            _id: req.params.groupId,
+            members: {
+                "$in": [req.userId]
+            }
+        })
         await UserControl.removeIdGroupInUsers(group.id, group.members)
-        Group.findByIdAndRemove(req.params.groupId, (error, group) => {
+        Group.findOneAndRemove({
+
+            _id: req.params.groupId,
+            members: {
+                "$in": [req.userId]
+            }
+        }, (error, group) => {
             /* verificando se o grupo foi encontrado, caso não seja encontrado significa que o grupo não existe mais ou nunca existiu, por isso é retornado um 410. */
             if (error)
                 return res.status(410).send({
