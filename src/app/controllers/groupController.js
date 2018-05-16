@@ -4,7 +4,11 @@ const UserControl = require('./userController')
 
 exports.getAll = async (req, res, next) => {
     try {
-        const query = Group.find().populate(['tasks', 'members'])
+        const query = Group.find({
+            members: {
+                "$in": [req.userId]
+            }
+        }).populate(['tasks', 'members'])
         query.exec(async (error, groups) => {
             /* é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 . */
             if (error) {
@@ -51,7 +55,13 @@ exports.getAll = async (req, res, next) => {
 
 exports.getById = async (req, res, next) => {
     try {
-        const query = Group.findById(req.params.groupId).populate(['members', 'tasks'])
+        const query = Group.findOne({
+
+            _id: req.params.groupId,
+            members: {
+                "$in": [req.userId]
+            }
+        }).populate(['members', 'tasks'])
         query.exec(async (error, group) => {
             /* é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 . */
             if (!group) {
@@ -73,10 +83,11 @@ exports.getById = async (req, res, next) => {
                             email: member.email
                         }
                     }),
+
                     tasks: group.tasks.map(task => {
                         return {
                             id: task._id,
-                            name: trask.name
+                            name: task.name
                         };
                     })
                 });

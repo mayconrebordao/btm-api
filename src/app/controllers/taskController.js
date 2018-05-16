@@ -51,7 +51,10 @@ exports.getAll = async (req, res, next) => {
 
 exports.getById = async (req, res, next) => {
     try {
-        const query = Task.findById(req.params.taskId).populate(['belongs_to', 'users'])
+        const query = Task.findOne({
+            _id: req.params.taskId,
+            belongs_to: req.groupId
+        }).populate(['belongs_to', 'users'])
         query.exec((error, task) => {
             if (!task) {
                 return res.status(410).send({

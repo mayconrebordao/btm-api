@@ -20,7 +20,7 @@ rotas /
 
         Group Tasks:
             get /groups/:groupId/tasks/         //  Listar todas as tarefas do grupo
-            get /groups/:groupId/tasks/:taskId          //  VEr um atarefa especifica do trugo
+            get /groups/:groupId/tasks/:taskId          //  Ver uma tarefa especifica do grupo
             post /groups/:groupId/tasks/            //  Criar uma tarefa no grupo
             patch /groups/:groupId/tasks/:taskId            //  Atualizar uma tarefa no grupo
             delete /groups/:groupId/tasks/:taskId           //  deletar uma tarefa no grupo
