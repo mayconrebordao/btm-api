@@ -8,7 +8,7 @@ exports.getAll = async (req, res, next) => {
             members: {
                 "$in": [req.userId]
             }
-        }).populate(['tasks', 'members'])
+        }).populate(['categories', 'members'])
         query.exec(async (error, groups) => {
             /* é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 . */
             if (error) {
@@ -17,7 +17,7 @@ exports.getAll = async (req, res, next) => {
                 });
             }
             let response = groups.map(group => {
-                group.tasks = group.tasks || [];
+                group.categories = group.categories || [];
                 return {
                     id: group._id,
                     name: group.name,
@@ -29,7 +29,7 @@ exports.getAll = async (req, res, next) => {
                             email: member.email
                         }
                     }),
-                    tasks: group.tasks.map(task => {
+                    categories: group.categories.map(task => {
                         return {
                             id: task._id,
                             name: task.name
@@ -61,7 +61,7 @@ exports.getById = async (req, res, next) => {
             members: {
                 "$in": [req.userId]
             }
-        }).populate(['members', 'tasks'])
+        }).populate(['members', 'categories'])
         query.exec(async (error, group) => {
             /* é retornado um erro caso o grupo não seja encontrado, esse erro é repassado ao usuário com um 404 . */
             if (!group) {
@@ -69,8 +69,8 @@ exports.getById = async (req, res, next) => {
                     error: "Group Not found."
                 });
             } else {
-                /*  verificando se o valor de tasks é unfined, caso seja ele recebe um vetor vazio */
-                group.tasks = group.tasks || [];
+                /*  verificando se o valor de categories é unfined, caso seja ele recebe um vetor vazio */
+                group.categories = group.categories || [];
                 /* retornando dados do grupo */
                 return res.status(200).send({
                     id: group._id,
@@ -84,7 +84,7 @@ exports.getById = async (req, res, next) => {
                         }
                     }),
 
-                    tasks: group.tasks.map(task => {
+                    categories: group.categories.map(task => {
                         return {
                             id: task._id,
                             name: task.name
@@ -293,24 +293,24 @@ exports.delete = async (req, res, next) => {
 
 
 /* método para adicionar a referência de uma tarefa a um grupo */
-exports.addIdTaskInGroup = async (groupId, taskId) => {
+exports.addIdCategoryInGroup = async (groupId, categoryId) => {
     try {
         const group = await Group.findById(groupId)
-        if (!group.tasks.find(task => {
-                return task === taskId
+        if (!group.categories.find(category => {
+                return category === categoryId
             })) {
-            await group.tasks.push(taskId)
+            await group.categories.push(categoryId)
             let {
                 name,
                 description,
                 members,
-                tasks
+                categories
             } = group
             await Group.findByIdAndUpdate(groupId, {
                 name,
                 description,
                 members,
-                tasks
+                categories
             })
         }
         return true
@@ -321,23 +321,23 @@ exports.addIdTaskInGroup = async (groupId, taskId) => {
 }
 
 /* método para remover a referência de uma tarefa de um grupo */
-exports.removeIdTaskInGroup = async (groupId, taskId) => {
+exports.removeIdCategoryInGroup = async (groupId, categoryId) => {
     try {
         const group = await Group.findById(groupId)
-        group.tasks = group.tasks.filter(task => {
-            return task.toString() !== taskId.toString()
+        group.categories = group.categories.filter(category => {
+            return category.toString() !== categoryId.toString()
         })
         let {
             name,
             description,
             members,
-            tasks
+            categories
         } = group
         await Group.findByIdAndUpdate(groupId, {
             name,
             description,
             members,
-            tasks
+            categories
         })
         return true
 

@@ -1,6 +1,7 @@
-const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 const authConfig = require("../../config/auth.json");
+const utils = require('./utils')
 
 function generateToken(params = {}) {
     return jwt.sign(params, authConfig.secret, {
@@ -10,16 +11,16 @@ function generateToken(params = {}) {
 
 /* rota para listar todos os usuários */
 exports.getAll = async (req, res, next) => {
-    const query = User.find().populate("groupTasks");
+    const query = User.find().populate("groups");
     query.exec(async (error, docs) => {
         if (docs) {
             const users = docs.map(doc => {
-                doc.groupTasks = doc.groupTasks || [];
+                doc.groups = doc.groups || [];
                 return {
                     id: doc._id,
                     name: doc.name,
                     email: doc.email,
-                    groups: doc.groupTasks.map(group => {
+                    groups: doc.groups.map(group => {
                         return {
                             id: group._id,
                             name: group.name,
@@ -39,15 +40,15 @@ exports.getAll = async (req, res, next) => {
 
 /* Rota para listar apenas um usuário */
 exports.getById = async (req, res, next) => {
-    const query = User.findById(req.params.userId).populate("groupTasks");
+    const query = User.findById(req.params.userId).populate("groups");
     query.exec(async (error, doc) => {
         if (doc) {
-            doc.groupTasks = doc.groupTasks || [];
+            doc.groups = doc.groups || [];
             const user = {
                 id: doc._id,
                 name: doc.name,
                 email: doc.email,
-                groups: doc.groupTasks.map(group => {
+                groups: doc.groups.map(group => {
                     return {
                         id: group._id,
                         name: group.name,
@@ -114,38 +115,42 @@ exports.create = async (req, res, next) => {
 
 /* Rota para atualizar usuários */
 exports.update = async (req, res, next) => {
-    const {
-        name,
-        password,
-        email
-    } = req.body;
-    if (!name || !password || !email) {
-        return res.status(428).send({
-            error: "Email, password or name is null, but can not be null."
-        });
-    }
-
-    User.findByIdAndUpdate(
-        req.params.userId, {
+    try {
+        const {
             name,
             password,
             email
-        }, {
-            new: true
-        },
-        (error, user) => {
-            if (error)
-                return res.status(500).send({
-                    error: "Internla error, please try again."
-                });
-            else
-                return res.send({
-                    id: user._id,
-                    name: user.name,
-                    email: user.email
-                });
+        } = req.body;
+        if (!name || !password || !email) {
+            return res.status(428).send({
+                error: "Email, password or name is null, but can not be null."
+            });
         }
-    );
+
+        User.findByIdAndUpdate(
+            req.params.userId, {
+                name,
+                password,
+                email
+            }, {
+                new: true
+            },
+            (error, user) => {
+                if (error)
+                    return res.status(500).send({
+                        error: "Internla error, please try again."
+                    });
+                else
+                    return res.send({
+                        id: user._id,
+                        name: user.name,
+                        email: user.email
+                    });
+            }
+        );
+    } catch (error) {
+        return utils.ServerError(res)
+    }
 };
 
 exports.delete = async (req, res, next) => {
@@ -172,8 +177,8 @@ exports.addIdGroupInUsers = async (groupId, users) => {
     try {
         for (let i = 0; i < users.length; i++) {
             const user = await User.findById(users[i])
-            if (user.groupTasks.length === 0) {
-                user.groupTasks.push(groupId)
+            if (user.groups.length === 0) {
+                user.groups.push(groupId)
             } else {
                 let check = false
                 /* verificando se o id do grupo ja existe na lista de grupos do usuário */
@@ -183,7 +188,7 @@ exports.addIdGroupInUsers = async (groupId, users) => {
 
                 }
                 if (!check) {
-                    await user.groupTasks.push(groupId)
+                    await user.groups.push(groupId)
                 }
             }
             await User.findByIdAndUpdate(users[i], user, {
@@ -203,7 +208,7 @@ exports.removeIdGroupInUsers = async (groupId, users) => {
             const user = await User.findById(users[i])
             let tasks = []
             /* removendo apenas um grupo da lista de grupos do usuários */
-            user.groupTasks = user.groupTasks.filter(group => {
+            user.groups = user.groups.filter(group => {
                 return group.toString() !== groupId.toString()
             })
 
@@ -211,20 +216,18 @@ exports.removeIdGroupInUsers = async (groupId, users) => {
                 name,
                 email,
                 password,
-                groupTasks
+                groups
             } = user
             await User.findByIdAndUpdate(users[i], {
                 name,
                 email,
                 password,
-                groupTasks
+                groups
             }, {
                 new: true
             })
         }
         return true
-        // await Promise.all(
-        // )
     } catch (error) {
         return error
     }

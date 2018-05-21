@@ -13,10 +13,6 @@ const TaskSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    category: {
-        type: String,
-        require: true
-    },
     private: {
         type: Boolean,
         default: false,
@@ -24,7 +20,7 @@ const TaskSchema = new mongoose.Schema({
     },
     belongs_to: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Group"
+        ref: "Category"
     },
     users: [{
         type: mongoose.Schema.Types.ObjectId,

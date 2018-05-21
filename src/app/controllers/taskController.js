@@ -1,11 +1,11 @@
 const Task = require("../models/Task");
 const User = require("../models/User");
-const GroupControl = require('../controllers/groupController')
+const CategoryControl = require('../controllers/categoryController')
 
 exports.getAll = async (req, res, next) => {
     try {
         const query = Task.find({
-            belongs_to: req.groupId
+            belongs_to: req.categoryId
         }).populate(['belongs_to', 'users'])
         query.exec((error, tasks) => {
             if (error) {
@@ -23,7 +23,7 @@ exports.getAll = async (req, res, next) => {
                         deadline: task.deadline,
                         belongs_to: {
                             id: task.belongs_to.id,
-                            group_name: task.belongs_to.name,
+                            category_name: task.belongs_to.name,
                             description: task.belongs_to.description
                         },
                         users: task.users.map(user => {
@@ -53,7 +53,7 @@ exports.getById = async (req, res, next) => {
     try {
         const query = Task.findOne({
             _id: req.params.taskId,
-            belongs_to: req.groupId
+            belongs_to: req.categoryId
         }).populate(['belongs_to', 'users'])
         query.exec((error, task) => {
             if (!task) {
@@ -69,7 +69,7 @@ exports.getById = async (req, res, next) => {
                     deadline: task.deadline,
                     belongs_to: {
                         id: task.belongs_to.id,
-                        group_name: task.belongs_to.name,
+                        category_name: task.belongs_to.name,
                         description: task.belongs_to.description
                     },
                     users: task.users.map(user => {
@@ -119,6 +119,8 @@ exports.create = async (req, res, next) => {
             aux = []
         for (let i = 0; i < users.length; i++) {
             try {
+                console.log(users[i]);
+
                 if (!await User.findById(users[i])) {
                     check.push(users[i])
                 } else {
@@ -132,20 +134,24 @@ exports.create = async (req, res, next) => {
 
         }
         users = aux
+        console.log(req.categoryId);
+        // return res.send()
         Task.create({
             name,
             description,
             private,
             category,
             deadline,
-            belongs_to: req.groupId
+            belongs_to: req.categoryId
         }, async (error, task) => {
-            if (!error) {
+            // console.log(task);
+
+            if (task) {
                 await Promise.all(users.map(async user => {
                     await task.users.push(user)
                 }))
                 await task.save()
-                await GroupControl.addIdTaskInGroup(req.groupId, task.id)
+                await CategoryControl.addIdTaskInCategory(req.categoryId, task.id)
                 const query = Task.findById(task._id).populate(['users', 'belongs_to'])
                 query.exec(async (error, task) => {
                     if (task) {
@@ -246,14 +252,14 @@ exports.update = async (req, res, next) => {
         })
         Task.findOneAndUpdate({
                 _id: req.params.taskId,
-                belongs_to: req.groupId
+                belongs_to: req.categoryId
             }, {
                 name,
                 description,
                 private,
                 category,
                 deadline,
-                belongs_to: req.groupId
+                belongs_to: req.categoryId
             }, {
                 new: true,
                 populate: 'belongs_to'
@@ -321,7 +327,7 @@ exports.remove = async (req, res, next) => {
     try {
         const task = Task.findOne({
             _id: req.params.taskId,
-            belongs_to: req.groupId
+            belongs_to: req.categoryId
         })
         if (!task)
             return res.status(404).send({
@@ -329,10 +335,10 @@ exports.remove = async (req, res, next) => {
             })
         else {
 
-            await GroupControl.removeIdTaskInGroup(req.groupId, req.params.taskId)
+            await CategoryControl.removeIdCategoryInGroup(req.categoryId, req.params.taskId)
             Task.findOneAndRemove({
                 _id: req.params.taskId,
-                belongs_to: req.groupId
+                belongs_to: req.categoryId
             }, (error) => {
                 if (!error) {
                     return res.status(202).send({

@@ -16,9 +16,19 @@ const GroupSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     }],
-    tasks: [{
+    categories: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Task"
+        ref: "Category"
+    }],
+    notes: [{
+        content: {
+            type: String,
+            require: true
+        },
+        userOwner: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        }
     }]
 });
 

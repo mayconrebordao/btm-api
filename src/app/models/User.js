@@ -20,15 +20,17 @@ const UserSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    groupTasks: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Group"
-        }
-    ]
+    groups: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group"
+    }],
+    invites: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group"
+    }],
 });
 
-UserSchema.pre("save", async function(next) {
+UserSchema.pre("save", async function (next) {
     const hash = await bcrypt.hash(this.password, 10);
     this.password = hash;
     next();

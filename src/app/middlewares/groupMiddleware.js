@@ -6,7 +6,9 @@ exports.groupExists = async (req, res, next) => {
 	try {
 		/* tentando verificr se o grupo existe, caso exista o usuário procede em sua requisição */
 		Group.findById(req.params.groupId, (error, group) => {
+			console.log(req.params.groupId);
 			if (group) {
+
 				req.groupId = req.params.groupId
 				return next()
 			} else {
