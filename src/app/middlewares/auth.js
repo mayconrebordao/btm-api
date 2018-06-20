@@ -1,9 +1,11 @@
 const jwt = require("jsonwebtoken");
 const authConfig = require("../../config/auth.json");
+const User = require('../models/User')
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
+        console.log("error")
         return res.status(401).send({
             error: "The request has not been applied because it lacks valid authentication credentials for the target resource. No token provided."
         });
@@ -36,7 +38,19 @@ module.exports = (req, res, next) => {
                 });
         }
         req.userId = decoded.id;
+        User.findOne({
+            _id: req.userId
+        }, (error, user) => {
+            if (user)
+                return next();
+            else
+                return res
+                    .status(404)
+                    .send({
+                        error: "User is gone, token no more valid"
+                    })
+        })
+
         // console.log(req.userId);
-        return next();
     });
 };

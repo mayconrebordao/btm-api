@@ -12,6 +12,10 @@ const GroupSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    },
     members: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
@@ -21,14 +25,8 @@ const GroupSchema = new mongoose.Schema({
         ref: "Category"
     }],
     notes: [{
-        content: {
-            type: String,
-            require: true
-        },
-        userOwner: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User"
-        }
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "note"
     }]
 });
 

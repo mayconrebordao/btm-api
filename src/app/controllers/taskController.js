@@ -325,17 +325,20 @@ exports.update = async (req, res, next) => {
 /* removendo tarefa */
 exports.remove = async (req, res, next) => {
     try {
-        const task = Task.findOne({
+        const task = await Task.findOne({
             _id: req.params.taskId,
             belongs_to: req.categoryId
         })
+        console.log(task);
+
         if (!task)
+
             return res.status(404).send({
                 error: "Task Not Found."
             })
         else {
-
-            await CategoryControl.removeIdCategoryInGroup(req.categoryId, req.params.taskId)
+            // await CategoryControl.removeIdTaskInCategory
+            await CategoryControl.removeIdTaskInCategory(req.categoryId, req.params.taskId)
             Task.findOneAndRemove({
                 _id: req.params.taskId,
                 belongs_to: req.categoryId
@@ -345,16 +348,45 @@ exports.remove = async (req, res, next) => {
                         msg: "Task Delete Successfull."
                     })
                 } else {
-                    return res.status(500).send({
-                        errot: "Internal server Error, please try again."
+                    return res.status(410).send({
+                        errot: "Task is gone"
                     });
                 }
             })
 
         }
     } catch (error) {
+        console.log(error);
+
         return res.status(500).send({
-            errot: "Internal server Error, please try again."
+            errot: "Task is gone"
         });
+    }
+}
+
+exports.removeMore = async (listTask, categoryId) => {
+    try {
+        console.log('task');
+
+        await Promise.all(listTask.map(async task => {
+            console.log(task);
+
+            try {
+                await Task.findOneAndRemove({
+                    _id: task,
+                    belongs_to: categoryId
+                })
+            } catch (error) {
+                console.log('task erro');
+                console.log(error);
+
+
+            }
+        }))
+        return true
+    } catch (error) {
+        console.log('task 2 erro');
+        console.log(error);
+        return error
     }
 }

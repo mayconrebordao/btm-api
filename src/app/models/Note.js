@@ -13,7 +13,7 @@ const NoteSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Group'
     },
-    userOwner: {
+    owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     }

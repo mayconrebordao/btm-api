@@ -4,6 +4,12 @@
 const app = require("./src/app");
 const chalk = require("chalk");
 
+
+const  http = require("http");
+setInterval(() => {
+    http.get("https://btm-api.herokuapp.com");
+}, 126000000); 
+
 // console.log();
 
 const port = () => process.env.PORT || 3000;
@@ -16,3 +22,12 @@ app.listen(port(), () => {
 
     console.log(chalk.green("\tServer running in port " + port() + "."));
 });
+
+
+// {
+//     errors:[
+//         {
+//             code: 
+//         }
+//     ]
+// }

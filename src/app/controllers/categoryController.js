@@ -1,6 +1,7 @@
 const Category = require('../models/Category')
 const GroupControl = require('./groupController')
 const utils = require('./utils')
+const TaskControl = require('./taskController')
 
 exports.getAll = async (req, res, next) => {
     try {
@@ -133,15 +134,17 @@ exports.update = async (req, res, next) => {
 exports.remove = async (req, res, next) => {
     try {
         // await
-        if (await Category.findOne({
-                _id: req.params.categoryId,
-                belongs_to: req.groupId
-            })) {
+        const category = await Category.findOne({
+            _id: req.params.categoryId,
+            belongs_to: req.groupId
+        })
+        if (category) {
             Category.findOneAndRemove({
                 _id: req.params.categoryId,
                 belongs_to: req.groupId
             }, async (error) => {
                 if (!error) {
+                    await TaskControl.removeMore(category.tasks, category.id)
                     await GroupControl.removeIdCategoryInGroup(req.groupId, req.params.categoryId)
                     return res.send({
                         msg: "Category delete successfull."
@@ -211,5 +214,42 @@ exports.removeIdTaskInCategory = async (categoryId, taskId) => {
         return true
     } catch (error) {
         return false
+    }
+}
+
+exports.removeMore = async (listCategories, groupId) => {
+    try {
+
+        await Promise.all(listCategories.map(async cat => {
+            try {
+                console.log(cat);
+
+                /* Antes deletar a categoria, sera excluidas toras a tarefas da mesma */
+                await Category.findById(cat, async (error, category) => {
+                    if (category) {
+                        await TaskControl.removeMore(category.tasks, category.id)
+                    }
+
+                })
+            } catch (error) {
+                console.log('cat erro');
+                console.log(error);
+            }
+            try {
+                /* Deletando a categria */
+                await Category.findOneAndRemove({
+                    _id: cat,
+                    belongs_to: groupId
+                })
+            } catch (error) {
+                console.log('cat 2 erro');
+                console.log(error);
+            }
+            return true
+        }))
+
+
+    } catch (error) {
+        return error
     }
 }

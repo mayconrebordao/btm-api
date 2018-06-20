@@ -12,6 +12,11 @@ router.post("/", userControl.create);
 router.patch("/:userId", auth, userControl.update);
 router.delete("/:userId", auth, userControl.delete);
 
+router.post("/:userId/invitations/:invitationId", auth, userControl.addIdGroupInUsers);
+router.delete("/:userId/invitations/:invitationId", auth, userControl.removeIdGroupInUsers);
+
+
+
 module.exports = app => app.use("/users", router);
 
 // => app.use("/authenticate", router);
